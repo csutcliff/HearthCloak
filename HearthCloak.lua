@@ -71,13 +71,15 @@ local function findTeleportItemInInventory(inventorySlot, searchItemId, cooldown
 end
 
 local function findTeleportItemInBags(searchItemId, cooldowns)
-    for bag=0, NUM_BAG_SLOTS do
-        for slot=1, GetContainerNumSlots(bag) do
-            local itemId = GetContainerItemID(bag, slot)
+    for bag=BACKPACK_CONTAINER, NUM_BAG_SLOTS do
+        for slot=1, C_Container.GetContainerNumSlots(bag) do
+            local itemId = C_Container.GetContainerItemID(bag, slot)
             if itemId == searchItemId then
-                local texture, _, _, _, _, _, itemLink = GetContainerItemInfo(bag, slot)
+                local itemInfo = C_Container.GetContainerItemInfo(bag, slot)
+                local texture = itemInfo["iconFileID"]
+                local itemLink = C_Container.GetContainerItemLink(bag, slot)
                 local now = GetTime()
-                local cooldownStart, cooldownDuration, cooldown = GetContainerItemCooldown(bag, slot)
+                local cooldownStart, cooldownDuration, cooldown = C_Container.GetContainerItemCooldown(bag, slot)
                 if cooldown == 1 and cooldownStart == 0 then
                     return {
                         bag = bag,
@@ -99,9 +101,9 @@ local function findTeleportItemInBags(searchItemId, cooldowns)
 end
 
 local function checkBagSlotForReplacedGear(bag, slot, searchItemId, searchLink)
-    local itemId = GetContainerItemID(bag, slot)
+    local itemId = C_Container.GetContainerItemID(bag, slot)
     if itemId == searchItemId then
-        local itemLink = GetContainerItemLink(bag, slot)
+        local itemLink = C_Container.GetContainerItemLink(bag, slot)
         if itemLink == searchLink then
             return {
                 bag = bag,
@@ -125,7 +127,7 @@ local function findReplacedGearInBags(searchItemId, searchLink, probablyBag, pro
     end
 
     for bag=0, NUM_BAG_SLOTS do
-        for slot=1, GetContainerNumSlots(bag) do
+        for slot=1, C_Container.GetContainerNumSlots(bag) do
             result = checkBagSlotForReplacedGear(bag, slot, searchItemId, searchLink)
             if result ~= nil then
                 return result
@@ -218,7 +220,7 @@ local function port(msg)
     if found.bag ~= nil then
         setState('EQUIP', found)
         ClearCursor()
-        PickupContainerItem(found.bag, found.slot)
+        C_Container.PickupContainerItem(found.bag, found.slot)
         PickupInventoryItem(found.inventorySlot)
     else
         setState('READY', found)
@@ -231,7 +233,7 @@ local function cleanup()
         local found = findReplacedGearInBags(data.replaceItemId, data.replaceLink, data.bag, data.slot)
         if found ~= nil then
             ClearCursor()
-            PickupContainerItem(found.bag, found.slot)
+            C_Container.PickupContainerItem(found.bag, found.slot)
             PickupInventoryItem(data.inventorySlot)
             log('Re-equipped ' .. data.replaceLink)
         else
@@ -285,8 +287,8 @@ local function init()
         options.frame.x = newX
         options.frame.y = newY
     end)
-    frame:SetBackdrop({ 
-        bgFile = 'Interface\\DialogFrame\\UI-DialogBox-Background', 
+    frame:SetBackdrop({
+        bgFile = 'Interface\\DialogFrame\\UI-DialogBox-Background',
         tile = true,
         tileSize = 32,
         insets = { left = -5, right = -5, top = -5, bottom = -5 }
